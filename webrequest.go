@@ -197,7 +197,7 @@ func (wm WebMap) Remove(service, section, action, item string) error {
 	if _, ok := wm[key]; ok {
 		delete(wm, key)
 	} else {
-		return errors.New("Key now found")
+		return errors.New("Key not found")
 	}
 	return nil
 }
