@@ -2,7 +2,7 @@
 Helper package for common web request features
 
 
-A broken example is better than no example in my eyes.  Here's a ~2 year old example that still has to be converted to use the the proper templates and web elements.
+A broken example is better than no example in my eyes.  Here's a ~2 year old example that still has to be converted to use the proper templates and web elements.
 
 ```
 func (ws *WebServer) Handler(w http.ResponseWriter, r *http.Request) {
