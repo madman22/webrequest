@@ -1,38 +1,45 @@
 package webrequest
 
 import (
+	"encoding/gob"
 	"errors"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
+
 	"time"
+
+	//"madman/servicemanager/web/dashboard"
+	"github.com/madman22/dashboard"
 )
 
+//TODO implement more route options
+
+func init() {
+	fmt.Println("INITING GOB REQUEST TYPES")
+	gob.Register(Guest)
+	gob.Register(&WebUser{})
+	gob.Register(&WebRoute{})
+	gob.Register(time.Time{})
+	gob.Register(&WebRequest{})
+}
+
+//TODO use Template in web server instead of element,string,error, just element,error and user settings/access determines template
 type WebRequest struct {
 	ID string
 	WebUser
 	WebRoute
-	RemoteAddr   string
-	TemplateName string
-	Uri          string
-	Timestamp    time.Time
-	Form         url.Values
-}
-
-type WebUser struct {
-	ID       string
-	Username string
-	AccessLevel
-}
-
-type WebRoute struct {
-	Service string
-	Section string
-	Action  string
-	Item    string
+	Timestamp time.Time
+	//Request   *http.Request
+	Form       url.Values
+	RemoteAddr string
+	Template   string
+	Uri        string
 }
 
 func (wr *WebRequest) String() string {
+	//var out []string
 	out := []string{"WebRequest:", wr.Timestamp.Format(time.Stamp)}
 	if len(wr.ID) > 0 {
 		out = append(out, "ID:"+wr.ID)
@@ -57,10 +64,21 @@ func (wr *WebRequest) Reset(id string) {
 	wr.Item = ""
 	wr.WebUser.ID = ""
 	wr.Username = ""
+	wr.Password = ""
 	wr.AccessLevel = Guest
 	wr.RemoteAddr = ""
+	wr.Uri = ""
+	wr.Template = ""
 	wr.Form = make(url.Values)
-	wr.Timestamp = time.Now()
+	wr.Timestamp = time.Time{}
+}
+
+type WebRoute struct {
+	Service string
+	Section string
+	Action  string
+	Item    string
+	//Options []string
 }
 
 func (wr *WebRoute) String() string {
@@ -80,10 +98,12 @@ func (wr *WebRoute) String() string {
 	if len(out) == 1 {
 		return ""
 	}
+
 	return strings.Join(out, " ")
 }
 
 func (wr *WebRoute) HREF() string {
+	//var out string
 	out := "/"
 	if len(wr.Service) < 1 {
 		return out
@@ -102,6 +122,13 @@ func (wr *WebRoute) HREF() string {
 	}
 	out += "/" + wr.Item
 	return out
+}
+
+type WebUser struct {
+	ID       string
+	Username string
+	Password string
+	AccessLevel
 }
 
 func (wu *WebUser) String() string {
@@ -170,20 +197,7 @@ func ParseAccessLevel(input string) (AccessLevel, error) {
 	}
 }
 
-type TempalteName string
-
-type WebFunc func(*WebRequest) (WebElement, TempalteName, error)
-
-type WebWriter interface {
-	Write([]byte) (int, error)
-}
-
-type WebElement interface {
-	HTML(*WebRequest) ([]byte, error)
-	Write(WebWriter, *WebRequest) (int, error)
-	WriteAndReplace(WebWriter, *WebRequest, ...WebElement) (int, error)
-	WriteWithChildren(WebWriter, *WebRequest, ...WebElement) (int, error)
-}
+type WebFunc func(*WebRequest) (dashboard.Element, string, error)
 
 type WebMap map[WebRoute]WebFunc
 
@@ -197,7 +211,7 @@ func (wm WebMap) Remove(service, section, action, item string) error {
 	if _, ok := wm[key]; ok {
 		delete(wm, key)
 	} else {
-		return errors.New("Key not found")
+		return errors.New("Key now found")
 	}
 	return nil
 }
@@ -213,7 +227,7 @@ func (wm WebMap) RemoveService(service string) (int, error) {
 	return count, nil
 }
 
-func (wm WebMap) Do(wr *WebRequest) (WebElement, TempalteName, error) {
+func (wm WebMap) Do(wr *WebRequest) (dashboard.Element, string, error) {
 	route := wr.WebRoute
 	if len(wm) < 1 {
 		return nil, "", errors.New("No Routes Registered")
@@ -239,7 +253,7 @@ func (wm WebMap) Do(wr *WebRequest) (WebElement, TempalteName, error) {
 			return f(wr)
 		}
 	}
-	return nil, "", errors.New("Route not found" + wr.WebRoute.String())
+	return nil, "", errors.New("Route not found" + wm.String())
 }
 
 func (wm WebMap) Merge(nwm WebMap, overwrite bool) error {
@@ -265,9 +279,35 @@ func (wm WebMap) String() string {
 	var body string
 	for route, _ := range wm {
 		if len(body) > 0 {
-			body += `, `
+			body += ` _____ `
 		}
 		body += route.String()
 	}
 	return body
 }
+
+//TODO create structure for routes that are interchangable, and can be used to auto create the menu
+/*
+
+
+
+type WebRoute2 struct {
+	Path RouteList
+}
+
+type RouteList struct {
+
+}
+
+type RouteQualifier interface {
+	HREF() string
+	Value() string
+	Next() RouteQualifier
+}
+
+/*
+
+func (s *service) Route(RouteQualifier) (Route, error)
+
+
+*/
