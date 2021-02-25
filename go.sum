@@ -1,0 +1,10 @@
+github.com/AspenWireless/cache v0.0.0-20210225174640-d5859108a7a6 h1:YCEL4CLGNVg0G3oCllUDrxroNKmU9lQBgH7ru7kgWyI=
+github.com/AspenWireless/cache v0.0.0-20210225174640-d5859108a7a6/go.mod h1:UaPbJk0L51kOd64nGlY4uAPYHdckZEXjXG4mC+EX43k=
+github.com/AspenWireless/dashboard v0.0.0-20210225175432-db0daa0b7ac9 h1:wfI7rD5OulrqSV4vPBeZNCftaE2T7X+vEozdXQQEll4=
+github.com/AspenWireless/dashboard v0.0.0-20210225175432-db0daa0b7ac9/go.mod h1:3JwC01gV1gMgej1Hf6cJCLr66Z7Ns1pNAtCkuXJvwL0=
+github.com/AspenWireless/log v0.0.0-20210225175017-aae1bb286551 h1:IlDggGxWuMN2LG7//l6YzbW7ZA9YOJk5FpjH0LkFnAk=
+github.com/AspenWireless/log v0.0.0-20210225175017-aae1bb286551/go.mod h1:zQhr4+Tc9SW8LTCHLihO9TErlVGP0q7irnGm0J8BPSM=
+github.com/AspenWireless/scheduler v0.0.0-20210225173316-0e3362dccf42 h1:gLvGhnx0wqFZcgjWKZRBUeY6L06P9U4zNDIHqui3pxo=
+github.com/AspenWireless/scheduler v0.0.0-20210225173316-0e3362dccf42/go.mod h1:wzbQr/gvrZRTS1HEvmmiyrmQgMx8BX5CjFH9uOTNqF4=
+github.com/twinj/uuid v1.0.0 h1:fzz7COZnDrXGTAOHGuUGYd6sG+JMq+AoE7+Jlu0przk=
+github.com/twinj/uuid v1.0.0/go.mod h1:mMgcE1RHFUFqe5AfiwlINXisXfDGro23fWdPUfOMjRY=

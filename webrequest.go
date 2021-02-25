@@ -7,11 +7,9 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-
 	"time"
 
-	//"madman/servicemanager/web/dashboard"
-	"github.com/madman22/dashboard"
+	"github.com/AspenWireless/dashboard"
 )
 
 //TODO implement more route options
@@ -19,9 +17,9 @@ import (
 func init() {
 	fmt.Println("INITING GOB REQUEST TYPES")
 	gob.Register(Guest)
+	gob.Register(time.Time{})
 	gob.Register(&WebUser{})
 	gob.Register(&WebRoute{})
-	gob.Register(time.Time{})
 	gob.Register(&WebRequest{})
 }
 
@@ -64,7 +62,7 @@ func (wr *WebRequest) Reset(id string) {
 	wr.Item = ""
 	wr.WebUser.ID = ""
 	wr.Username = ""
-	wr.Password = ""
+	wr.Password = WebPassword{}
 	wr.AccessLevel = Guest
 	wr.RemoteAddr = ""
 	wr.Uri = ""
@@ -78,6 +76,7 @@ type WebRoute struct {
 	Section string
 	Action  string
 	Item    string
+	//Access  AccessLevel
 	//Options []string
 }
 
@@ -95,6 +94,9 @@ func (wr *WebRoute) String() string {
 	if len(wr.Item) > 0 {
 		out = append(out, "Item:"+wr.Item)
 	}
+	/*if wr.Access != 0 {
+		out = append(out, "Access:"+wr.Access.String())
+	}*/
 	if len(out) == 1 {
 		return ""
 	}
@@ -124,11 +126,40 @@ func (wr *WebRoute) HREF() string {
 	return out
 }
 
+func ParseWebRoute(in string) WebRoute {
+	if strings.HasPrefix(in, "/") {
+		in = strings.TrimPrefix(in, "/")
+	}
+	var wr WebRoute
+	items := strings.Split(in, "/")
+	if len(items) < 1 {
+		return WebRoute{}
+	} else if len(items) == 1 {
+		return WebRoute{Service: items[0]}
+	} else {
+		wr.Service = items[0]
+		wr.Section = items[1]
+		if len(items) > 2 {
+			wr.Action = items[2]
+			if len(items) > 3 {
+				wr.Item = items[3]
+			}
+		}
+	}
+	return wr
+}
+
 type WebUser struct {
 	ID       string
 	Username string
-	Password string
+	Password WebPassword
 	AccessLevel
+	LocalTime time.Time
+}
+
+type WebPassword struct {
+	Hash string
+	Type string
 }
 
 func (wu *WebUser) String() string {
@@ -138,6 +169,9 @@ func (wu *WebUser) String() string {
 	}
 	if len(wu.Username) > 0 {
 		out = append(out, "Username:"+wu.Username)
+	}
+	if !wu.LocalTime.IsZero() {
+		out = append(out, "Local Time:"+wu.LocalTime.Format(time.Stamp))
 	}
 	out = append(out, "Access:"+wu.AccessLevel.String())
 	return strings.Join(out, " ")
@@ -180,16 +214,34 @@ const (
 func ParseAccessLevel(input string) (AccessLevel, error) {
 	input = strings.ToLower(input)
 	switch input {
+	case "g":
+		fallthrough
 	case "guest":
 		return Guest, nil
+	case "u":
+		fallthrough
 	case "user":
 		return User, nil
+	case "c":
+		fallthrough
 	case "customer":
+		fallthrough
+	case "cust":
 		return Customer, nil
+	case "t":
+		fallthrough
+	case "technician":
+		fallthrough
 	case "tech":
 		return Tech, nil
+	case "a":
+		fallthrough
+	case "administrator":
+		fallthrough
 	case "admin":
 		return Admin, nil
+	case "s":
+		fallthrough
 	case "system":
 		return System, nil
 	default:
@@ -202,9 +254,15 @@ type WebFunc func(*WebRequest) (dashboard.Element, string, error)
 type WebMap map[WebRoute]WebFunc
 
 func (wm WebMap) Add(service, section, action, item string, f WebFunc) error {
+	//wm[WebRoute{Service: service, Section: section, Action: action, Item: item, Access: Guest}] = f
 	wm[WebRoute{Service: service, Section: section, Action: action, Item: item}] = f
 	return nil
 }
+
+/*func (wm WebMap) AddWithAccess(service, section, action, item string, access AccessLevel, f WebFunc) error {
+	wm[WebRoute{Service: service, Section: section, Action: action, Item: item, Access: access}] = f
+	return nil
+}*/
 
 func (wm WebMap) Remove(service, section, action, item string) error {
 	key := WebRoute{Service: service, Section: section, Action: action, Item: item}
@@ -229,6 +287,7 @@ func (wm WebMap) RemoveService(service string) (int, error) {
 
 func (wm WebMap) Do(wr *WebRequest) (dashboard.Element, string, error) {
 	route := wr.WebRoute
+	//route.Access = wr.WebUser.AccessLevel
 	if len(wm) < 1 {
 		return nil, "", errors.New("No Routes Registered")
 	}
@@ -253,8 +312,46 @@ func (wm WebMap) Do(wr *WebRequest) (dashboard.Element, string, error) {
 			return f(wr)
 		}
 	}
-	return nil, "", errors.New("Route not found" + wm.String())
+	if !wr.CheckAccess(Admin) {
+		return nil, "", errors.New("Route not found: " + wr.String())
+	} else {
+		return nil, "", errors.New("Route not found: " + wr.String() + " " + wm.String())
+	}
 }
+
+/*func (wm WebMap) DoWithAccess(wr *WebRequest) (dashboard.Element, string, error) {
+	route := wr.WebRoute
+	if len(wm) < 1 {
+		return nil, "", errors.New("No Routes Registered")
+	}
+	for {
+		if f, ok := wm[route]; ok {
+			return f(wr)
+		}
+		if len(route.Item) > 0 {
+			route.Item = ""
+			if f, ok := wm[route]; ok {
+				return f(wr)
+			}
+		}
+		if len(route.Action) > 0 {
+			route.Action = ""
+			if f, ok := wm[route]; ok {
+				return f(wr)
+			}
+		}
+		if len(route.Section) > 0 {
+			route.Section = ""
+			if f, ok := wm[route]; ok {
+				return f(wr)
+			}
+		}
+		if route.Access == Guest {
+			return nil, "", errors.New("Route not found" + wm.String())
+		}
+		route.Access--
+	}
+}*/
 
 func (wm WebMap) Merge(nwm WebMap, overwrite bool) error {
 	if wm == nil {
