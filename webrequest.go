@@ -32,8 +32,8 @@ type WebRequest struct {
 	//Request   *http.Request
 	Form       url.Values
 	RemoteAddr string
-	Template   string
-	Uri        string
+	//Template   string
+	Uri string
 }
 
 func (wr *WebRequest) String() string {
@@ -152,6 +152,7 @@ func ParseWebRoute(in string) WebRoute {
 type WebUser struct {
 	ID       string
 	Username string
+	Template string
 	Password WebPassword
 	AccessLevel
 	LocalTime time.Time
