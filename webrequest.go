@@ -1,6 +1,7 @@
 package webrequest
 
 import (
+	"context"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -13,9 +14,10 @@ import (
 )
 
 //TODO implement more route options
+//TODO implement access level in WebRoute/WebMap/etc instead of middleware
 
 func init() {
-	fmt.Println("INITING GOB REQUEST TYPES")
+	fmt.Println("INIT GOB REQUEST TYPES")
 	gob.Register(Guest)
 	gob.Register(time.Time{})
 	gob.Register(&WebUser{})
@@ -23,21 +25,18 @@ func init() {
 	gob.Register(&WebRequest{})
 }
 
-//TODO use Template in web server instead of element,string,error, just element,error and user settings/access determines template
 type WebRequest struct {
 	ID string
 	WebUser
 	WebRoute
-	Timestamp time.Time
-	//Request   *http.Request
+	Timestamp  time.Time
 	Form       url.Values
 	RemoteAddr string
-	//Template   string
-	Uri string
+	Context    context.Context
+	Uri        string
 }
 
 func (wr *WebRequest) String() string {
-	//var out []string
 	out := []string{"WebRequest:", wr.Timestamp.Format(time.Stamp)}
 	if len(wr.ID) > 0 {
 		out = append(out, "ID:"+wr.ID)
@@ -69,6 +68,7 @@ func (wr *WebRequest) Reset(id string) {
 	wr.Template = ""
 	wr.Form = make(url.Values)
 	wr.Timestamp = time.Time{}
+	wr.Context = nil
 }
 
 type WebRoute struct {
@@ -76,8 +76,6 @@ type WebRoute struct {
 	Section string
 	Action  string
 	Item    string
-	//Access  AccessLevel
-	//Options []string
 }
 
 func (wr *WebRoute) String() string {
@@ -94,9 +92,6 @@ func (wr *WebRoute) String() string {
 	if len(wr.Item) > 0 {
 		out = append(out, "Item:"+wr.Item)
 	}
-	/*if wr.Access != 0 {
-		out = append(out, "Access:"+wr.Access.String())
-	}*/
 	if len(out) == 1 {
 		return ""
 	}
@@ -105,7 +100,6 @@ func (wr *WebRoute) String() string {
 }
 
 func (wr *WebRoute) HREF() string {
-	//var out string
 	out := "/"
 	if len(wr.Service) < 1 {
 		return out
@@ -199,8 +193,8 @@ func (a AccessLevel) String() string {
 	}
 }
 
-func (a AccessLevel) CheckAccess(newa AccessLevel) bool {
-	return a >= newa
+func (a AccessLevel) CheckAccess(new AccessLevel) bool {
+	return a >= new
 }
 
 const (
@@ -255,29 +249,23 @@ type WebFunc func(*WebRequest) (dashboard.Element, string, error)
 type WebMap map[WebRoute]WebFunc
 
 func (wm WebMap) Add(service, section, action, item string, f WebFunc) error {
-	//wm[WebRoute{Service: service, Section: section, Action: action, Item: item, Access: Guest}] = f
 	wm[WebRoute{Service: service, Section: section, Action: action, Item: item}] = f
 	return nil
 }
-
-/*func (wm WebMap) AddWithAccess(service, section, action, item string, access AccessLevel, f WebFunc) error {
-	wm[WebRoute{Service: service, Section: section, Action: action, Item: item, Access: access}] = f
-	return nil
-}*/
 
 func (wm WebMap) Remove(service, section, action, item string) error {
 	key := WebRoute{Service: service, Section: section, Action: action, Item: item}
 	if _, ok := wm[key]; ok {
 		delete(wm, key)
 	} else {
-		return errors.New("Key now found")
+		return errors.New("key not found")
 	}
 	return nil
 }
 
 func (wm WebMap) RemoveService(service string) (int, error) {
 	count := 0
-	for id, _ := range wm {
+	for id := range wm {
 		if id.Service == service {
 			delete(wm, id)
 			count++
@@ -290,7 +278,7 @@ func (wm WebMap) Do(wr *WebRequest) (dashboard.Element, string, error) {
 	route := wr.WebRoute
 	//route.Access = wr.WebUser.AccessLevel
 	if len(wm) < 1 {
-		return nil, "", errors.New("No Routes Registered")
+		return nil, "", errors.New("no routes registered")
 	}
 	if f, ok := wm[route]; ok {
 		return f(wr)
@@ -320,43 +308,9 @@ func (wm WebMap) Do(wr *WebRequest) (dashboard.Element, string, error) {
 	}
 }
 
-/*func (wm WebMap) DoWithAccess(wr *WebRequest) (dashboard.Element, string, error) {
-	route := wr.WebRoute
-	if len(wm) < 1 {
-		return nil, "", errors.New("No Routes Registered")
-	}
-	for {
-		if f, ok := wm[route]; ok {
-			return f(wr)
-		}
-		if len(route.Item) > 0 {
-			route.Item = ""
-			if f, ok := wm[route]; ok {
-				return f(wr)
-			}
-		}
-		if len(route.Action) > 0 {
-			route.Action = ""
-			if f, ok := wm[route]; ok {
-				return f(wr)
-			}
-		}
-		if len(route.Section) > 0 {
-			route.Section = ""
-			if f, ok := wm[route]; ok {
-				return f(wr)
-			}
-		}
-		if route.Access == Guest {
-			return nil, "", errors.New("Route not found" + wm.String())
-		}
-		route.Access--
-	}
-}*/
-
 func (wm WebMap) Merge(nwm WebMap, overwrite bool) error {
 	if wm == nil {
-		wm = make(WebMap)
+		return errors.New("WebMap nil")
 	}
 	if nwm == nil {
 		return nil
@@ -375,7 +329,7 @@ func (wm WebMap) Merge(nwm WebMap, overwrite bool) error {
 
 func (wm WebMap) String() string {
 	var body string
-	for route, _ := range wm {
+	for route := range wm {
 		if len(body) > 0 {
 			body += ` _____ `
 		}
@@ -383,29 +337,3 @@ func (wm WebMap) String() string {
 	}
 	return body
 }
-
-//TODO create structure for routes that are interchangable, and can be used to auto create the menu
-/*
-
-
-
-type WebRoute2 struct {
-	Path RouteList
-}
-
-type RouteList struct {
-
-}
-
-type RouteQualifier interface {
-	HREF() string
-	Value() string
-	Next() RouteQualifier
-}
-
-/*
-
-func (s *service) Route(RouteQualifier) (Route, error)
-
-
-*/
