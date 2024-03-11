@@ -1,7 +1,6 @@
 package webrequest
 
 import (
-	"context"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -32,17 +31,17 @@ type WebRequest struct {
 	Timestamp  time.Time
 	Form       url.Values
 	RemoteAddr string
-	context    context.Context
-	Uri        string
+	//context    context.Context
+	Uri string
 }
 
-func (wr *WebRequest) Context() context.Context {
+/*func (wr *WebRequest) Context() context.Context {
 	return wr.context
 }
 
 func (wr *WebRequest) SetContext(ctx context.Context) {
 	wr.context = ctx
-}
+}*/
 
 func (wr *WebRequest) String() string {
 	out := []string{"WebRequest:", wr.Timestamp.Format(time.Stamp)}
@@ -76,7 +75,7 @@ func (wr *WebRequest) Reset(id string) {
 	wr.Template = ""
 	wr.Form = make(url.Values)
 	wr.Timestamp = time.Time{}
-	wr.context = nil
+	//wr.context = nil
 }
 
 type WebRoute struct {
@@ -158,6 +157,8 @@ type WebUser struct {
 	Password WebPassword
 	AccessLevel
 	LocalTime time.Time
+	LastLogin time.Time
+	LastSeen  time.Time
 }
 
 type WebPassword struct {
@@ -255,6 +256,31 @@ func ParseAccessLevel(input string) (AccessLevel, error) {
 type WebFunc func(*WebRequest) (dashboard.Element, string, error)
 
 type WebMap map[WebRoute]WebFunc
+
+func (wm WebMap) Exists(route WebRoute) bool {
+	if _, ok := wm[route]; ok {
+		return true
+	}
+	if len(route.Item) > 0 {
+		route.Item = ""
+		if _, ok := wm[route]; ok {
+			return true
+		}
+	}
+	if len(route.Action) > 0 {
+		route.Action = ""
+		if _, ok := wm[route]; ok {
+			return true
+		}
+	}
+	if len(route.Section) > 0 {
+		route.Section = ""
+		if _, ok := wm[route]; ok {
+			return true
+		}
+	}
+	return false
+}
 
 func (wm WebMap) Add(service, section, action, item string, f WebFunc) error {
 	wm[WebRoute{Service: service, Section: section, Action: action, Item: item}] = f
