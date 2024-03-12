@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -256,6 +257,41 @@ func ParseAccessLevel(input string) (AccessLevel, error) {
 type WebFunc func(*WebRequest) (dashboard.Element, string, error)
 
 type WebMap map[WebRoute]WebFunc
+
+type RouteList []WebRoute
+
+func (rl RouteList) Len() int {
+	return len(rl)
+}
+
+func (rl RouteList) Less(i, j int) bool {
+	if rl[i].Service == rl[j].Service {
+		if rl[i].Section == rl[j].Section {
+			if rl[i].Action == rl[j].Action {
+				return rl[i].Item < rl[j].Item
+			} else {
+				return rl[i].Action < rl[j].Action
+			}
+		} else {
+			return rl[i].Section < rl[j].Section
+		}
+	} else {
+		return rl[i].Service < rl[j].Service
+	}
+}
+
+func (rl RouteList) Swap(i, j int) {
+	rl[i], rl[j] = rl[j], rl[i]
+}
+
+func (wm WebMap) RouteList() RouteList {
+	var rl RouteList
+	for id, _ := range wm {
+		rl = append(rl, id)
+	}
+	sort.Sort(rl)
+	return rl
+}
 
 func (wm WebMap) Exists(route WebRoute) bool {
 	if _, ok := wm[route]; ok {
