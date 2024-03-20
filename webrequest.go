@@ -32,17 +32,9 @@ type WebRequest struct {
 	Timestamp  time.Time
 	Form       url.Values
 	RemoteAddr string
-	//context    context.Context
-	Uri string
+	Uri        string
+	UserAgent  string
 }
-
-/*func (wr *WebRequest) Context() context.Context {
-	return wr.context
-}
-
-func (wr *WebRequest) SetContext(ctx context.Context) {
-	wr.context = ctx
-}*/
 
 func (wr *WebRequest) String() string {
 	out := []string{"WebRequest:", wr.Timestamp.Format(time.Stamp)}
@@ -76,7 +68,7 @@ func (wr *WebRequest) Reset(id string) {
 	wr.Template = ""
 	wr.Form = make(url.Values)
 	wr.Timestamp = time.Time{}
-	//wr.context = nil
+	wr.UserAgent = ""
 }
 
 type WebRoute struct {
