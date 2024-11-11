@@ -190,6 +190,8 @@ func (a AccessLevel) String() string {
 		return "Administrator"
 	case System:
 		return "System"
+	case Developer:
+		return "Developer"
 	default:
 		return strconv.Itoa(int(a))
 	}
@@ -206,6 +208,7 @@ const (
 	Tech
 	Admin
 	System
+	Developer
 )
 
 func ParseAccessLevel(input string) (AccessLevel, error) {
@@ -241,6 +244,10 @@ func ParseAccessLevel(input string) (AccessLevel, error) {
 		fallthrough
 	case "system":
 		return System, nil
+	case "d":
+		fallthrough
+	case "developer":
+		return Developer, nil
 	default:
 		return Guest, errors.New("Cannot parse input to access level:" + input)
 	}
