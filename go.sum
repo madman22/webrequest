@@ -1,5 +1,5 @@
-github.com/AspenWireless/dashboard v0.0.0-20241008155802-54e6c772ce68 h1:vMLJEhe/LXAp2nzjLnCYtaq2f4Vr1Ny7rqzJ7HhsITQ=
-github.com/AspenWireless/dashboard v0.0.0-20241008155802-54e6c772ce68/go.mod h1:d9/xOM0nzvJs4CQ9nhSvYtSsSwzVih7D7NE9jWNyQOM=
+github.com/AspenWireless/dashboard v1.0.0 h1:QCSnaBU/MG0dr58SjlT6mMhxg+ufEPjNWX3JBS4zAIg=
+github.com/AspenWireless/dashboard v1.0.0/go.mod h1:d9/xOM0nzvJs4CQ9nhSvYtSsSwzVih7D7NE9jWNyQOM=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/myesui/uuid v1.0.0 h1:xCBmH4l5KuvLYc5L7AS7SZg9/jKdIFubM7OVoLqaQUI=
