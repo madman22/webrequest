@@ -1,6 +1,6 @@
 module github.com/madman22/webrequest
 
-go 1.22
+go 1.23
 
 require github.com/AspenWireless/dashboard v0.0.0-20241008155802-54e6c772ce68
 
