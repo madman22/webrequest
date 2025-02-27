@@ -419,12 +419,13 @@ func (wm WebMap) Merge(nwm WebMap, overwrite bool) error {
 }
 
 func (wm WebMap) String() string {
-	var body string
+	var body strings.Builder
 	for route := range wm {
-		if len(body) > 0 {
-			body += ` _____ `
+		if body.Len() > 0 {
+			body.WriteString(` _____ `)
 		}
-		body += route.String()
+		body.WriteString(route.String())
+		body.WriteString(" " + wm[route].AccessLevel.String())
 	}
-	return body
+	return body.String()
 }
