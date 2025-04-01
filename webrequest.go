@@ -34,6 +34,7 @@ type WebRequest struct {
 	RemoteAddr string
 	Uri        string
 	UserAgent  string
+	Title      string
 }
 
 func (wr *WebRequest) String() string {
@@ -258,6 +259,7 @@ type WebFunc func(*WebRequest) (dashboard.Element, string, error)
 type WebEndpoint struct {
 	WebFunc
 	AccessLevel
+	Title string
 }
 
 type WebMap map[WebRoute]WebEndpoint
@@ -323,12 +325,17 @@ func (wm WebMap) Exists(route WebRoute) bool {
 }
 
 func (wm WebMap) Add(service, section, action, item string, f WebFunc) error {
-	wm[WebRoute{Service: service, Section: section, Action: action, Item: item}] = WebEndpoint{f, Guest}
+	wm[WebRoute{Service: service, Section: section, Action: action, Item: item}] = WebEndpoint{f, Guest, ""}
 	return nil
 }
 
 func (wm WebMap) AddWithAccess(service, section, action, item string, f WebFunc, lvl AccessLevel) error {
-	wm[WebRoute{Service: service, Section: section, Action: action, Item: item}] = WebEndpoint{f, lvl}
+	wm[WebRoute{Service: service, Section: section, Action: action, Item: item}] = WebEndpoint{f, lvl, ""}
+	return nil
+}
+
+func (wm WebMap) AddWithAccessAndTitle(service, section, action, item string, f WebFunc, lvl AccessLevel, title string) error {
+	wm[WebRoute{Service: service, Section: section, Action: action, Item: item}] = WebEndpoint{f, lvl, title}
 	return nil
 }
 
@@ -360,6 +367,9 @@ func (wm WebMap) Do(wr *WebRequest) (dashboard.Element, string, error) {
 		return nil, "", errors.New("no routes registered")
 	}
 	if f, ok := wm[route]; ok {
+		if len(f.Title) > 0 {
+			wr.Title = f.Title
+		}
 		if !wr.CheckAccess(f.AccessLevel) {
 			return nil, "", errors.New("Not Authorized")
 		}
@@ -368,6 +378,9 @@ func (wm WebMap) Do(wr *WebRequest) (dashboard.Element, string, error) {
 	if len(route.Item) > 0 {
 		route.Item = ""
 		if f, ok := wm[route]; ok {
+			if len(f.Title) > 0 {
+				wr.Title = f.Title
+			}
 			if !wr.CheckAccess(f.AccessLevel) {
 				return nil, "", errors.New("Not Authorized")
 			}
@@ -377,6 +390,9 @@ func (wm WebMap) Do(wr *WebRequest) (dashboard.Element, string, error) {
 	if len(route.Action) > 0 {
 		route.Action = ""
 		if f, ok := wm[route]; ok {
+			if len(f.Title) > 0 {
+				wr.Title = f.Title
+			}
 			if !wr.CheckAccess(f.AccessLevel) {
 				return nil, "", errors.New("Not Authorized")
 			}
@@ -386,6 +402,9 @@ func (wm WebMap) Do(wr *WebRequest) (dashboard.Element, string, error) {
 	if len(route.Section) > 0 {
 		route.Section = ""
 		if f, ok := wm[route]; ok {
+			if len(f.Title) > 0 {
+				wr.Title = f.Title
+			}
 			if !wr.CheckAccess(f.AccessLevel) {
 				return nil, "", errors.New("Not Authorized")
 			}
