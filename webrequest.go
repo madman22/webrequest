@@ -70,6 +70,7 @@ func (wr *WebRequest) Reset(id string) {
 	wr.Form = make(url.Values)
 	wr.Timestamp = time.Time{}
 	wr.UserAgent = ""
+	wr.Title = ""
 }
 
 type WebRoute struct {
